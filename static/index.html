@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>8 Puzzle Solver</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,500;9..40,700&display=swap");
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f0f0f0;
+      }
+      .container {
+        max-width: 330px;
+        width: 100%;
+        margin: 20px auto;
+        text-align: center;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      }
+      .matrix {
+        display: grid;
+        grid-template-columns: repeat(3, 50px);
+        gap: 10px;
+        margin-bottom: 40px;
+        justify-content: center;
+      }
+      .matrix input {
+        width: 50px;
+        height: 50px;
+        text-align: center;
+        font-size: 18px;
+        border: 2px solid #393939;
+        border-radius: 5px;
+      }
+      button {
+        border: 2px solid #000;
+        font-size: 16px;
+        padding: 5px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>8 Puzzle Solver</h1>
+
+      <p style="margin-left: 10px; margin-right: 10px">
+        In this 8-puzzle solver, you will be working with a 3x3 grid where each
+        cell contains a number from 0 to 8. Each number represents a tile, and
+        the number 0 represents an empty space on the grid. The objective is to
+        move the tiles around using the empty space to reach the desired final
+        state from a given initial state.
+      </p>
+
+      <h2>Initial State</h2>
+      <div class="matrix" id="initialMatrix"></div>
+
+      <h2>Final State</h2>
+      <div class="matrix" id="finalMatrix"></div>
+
+      <button onclick="solvePuzzle()">Solve Puzzle</button>
+      <p id="result"></p>
+    </div>
+
+    <script>
+      function createMatrix(containerId) {
+        const container = document.getElementById(containerId);
+        for (let i = 0; i < 9; i++) {
+          const input = document.createElement("input");
+          input.type = "text";
+          input.maxLength = "1";
+          container.appendChild(input);
+        }
+      }
+
+      function getMatrix(containerId) {
+        const container = document.getElementById(containerId);
+        const inputs = container.querySelectorAll("input");
+        const matrix = [[], [], []];
+        inputs.forEach((input, index) => {
+          matrix[Math.floor(index / 3)].push(parseInt(input.value));
+        });
+        return matrix;
+      }
+
+      function solvePuzzle() {
+        const initialState = getMatrix("initialMatrix");
+        const finalState = getMatrix("finalMatrix");
+
+        fetch("http://127.0.0.1:5000/solve", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ initialState, finalState }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const resultContainer = document.getElementById("result");
+            resultContainer.innerHTML = ""; // Clear previous results
+
+            if (data.solution) {
+              data.solution.forEach((step, index) => {
+                const stepElement = document.createElement("div");
+                stepElement.textContent = `Step ${index}:`;
+
+                const stepContainer = document.createElement("div");
+                stepContainer.style.display = "flex";
+                stepContainer.style.justifyContent = "center";
+                stepContainer.style.marginBottom = "20px";
+
+                const matrixElement = document.createElement("div");
+                matrixElement.style.display = "grid";
+                matrixElement.style.gridTemplateColumns = "repeat(3, 50px)";
+                matrixElement.style.gap = "5px";
+
+                step.flat().forEach((value) => {
+                  const cell = document.createElement("div");
+                  cell.textContent = value === 0 ? "" : value;
+                  cell.style.width = "50px";
+                  cell.style.height = "50px";
+                  cell.style.textAlign = "center";
+                  cell.style.fontSize = "18px";
+                  cell.style.border = "1px solid #000"; // Add border to each cell
+                  cell.style.lineHeight = "50px"; // Vertically center the text
+                  matrixElement.appendChild(cell);
+                });
+
+                stepContainer.appendChild(matrixElement);
+                resultContainer.appendChild(stepElement);
+                resultContainer.appendChild(stepContainer);
+              });
+            } else {
+              resultContainer.textContent = data.message;
+            }
+          });
+      }
+
+      createMatrix("initialMatrix");
+      createMatrix("finalMatrix");
+    </script>
+  </body>
+</html>
